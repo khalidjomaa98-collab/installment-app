@@ -6,54 +6,79 @@ interface WarningMessagesProps {
 }
 
 export const WarningMessages: React.FC<WarningMessagesProps> = ({ params }) => {
-  const warnings: string[] = [];
+  const criticalWarnings: string[] = [];
+  const infoNotices: string[] = [];
 
-  // 1. Check if Down Payment is greater than or equal to Total Amount
+  // Critical: Down payment greater than or equal to total amount
   if (params.totalAmount > 0 && params.downPayment >= params.totalAmount) {
-    warnings.push("مبلغ المقدم أكبر من أو يساوي إجمالي قيمة السلعة (لا يوجد مبلغ متبقي للتقسيط).");
+    criticalWarnings.push("مبلغ المقدم أكبر من أو يساوي إجمالي قيمة السلعة (لا يوجد مبلغ متبقي للتقسيط).");
   }
 
-  // 2. Check if Down Payment is 0 (Just a hint, not a critical warning, but useful)
-  if (params.totalAmount > 0 && params.downPayment === 0) {
-    warnings.push("لم يتم تحديد مقدم (سيتم تقسيط كامل المبلغ).");
-  }
-
-  // 3. Check Duration
+  // Critical: Duration issues
   if (params.durationMonths === 0) {
-    warnings.push("مدة التقسيط 0 شهر! يرجى تحديد مدة زمنية صحيحة.");
+    criticalWarnings.push("مدة التقسيط 0 شهر! يرجى تحديد مدة زمنية صحيحة.");
   } else if (params.durationMonths < 0) {
-    warnings.push("مدة التقسيط لا يمكن أن تكون بالسالب.");
+    criticalWarnings.push("مدة التقسيط لا يمكن أن تكون بالسالب.");
   }
 
-  // 4. Check Interest Rate
-  if (params.interestRate === 0) {
-    warnings.push("نسبة الفائدة الصفرية (0%) تعني تقسيط بسعر الكاش.");
-  }
-
-  // 5. Check logical Admin Fees
+  // Critical: Unusually high admin fees
   if (params.addAdminFees && params.adminFeesType === 'percentage' && params.adminFeesValue > 30) {
-    warnings.push("نسبة المصاريف الإدارية تبدو مرتفعة جداً (>30%).");
+    criticalWarnings.push("نسبة المصاريف الإدارية تبدو مرتفعة جداً (>30%).");
   }
 
-  if (warnings.length === 0) return null;
+  // Info: Zero downpayment
+  if (params.totalAmount > 0 && params.downPayment === 0) {
+    infoNotices.push("عرض تقسيط بدون مقدم: سيتم تمويل كامل قيمة السلعة.");
+  }
+
+  // Info: Zero interest
+  if (params.interestRate === 0 && params.totalAmount > 0) {
+    infoNotices.push("عرض بدون فوائد (0%): تقسيط مباشر بسعر الكاش.");
+  }
+
+  if (criticalWarnings.length === 0 && infoNotices.length === 0) return null;
 
   return (
-    <div className="bg-amber-50 border-r-4 border-amber-500 p-4 mb-6 rounded-l-lg shadow-sm animate-fadeIn">
-      <div className="flex items-start">
-        <div className="flex-shrink-0 ml-3">
-          <svg className="h-6 w-6 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+    <div className="space-y-3 mb-6 animate-fadeIn">
+      {/* Critical Warnings */}
+      {criticalWarnings.length > 0 && (
+        <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+          <div className="p-1.5 bg-amber-100 text-amber-700 rounded-xl flex-shrink-0">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-amber-900 mb-1">يرجى مراجعة المدخلات:</h4>
+            <ul className="space-y-1">
+              {criticalWarnings.map((warning, index) => (
+                <li key={index} className="text-xs text-amber-800 font-medium">
+                  • {warning}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-amber-800">ملاحظات هامة على المدخلات:</h3>
-          <ul className="mt-2 list-disc list-inside text-sm text-amber-700 space-y-1">
-            {warnings.map((warning, index) => (
-              <li key={index}>{warning}</li>
+      )}
+
+      {/* Helpful Info Notices */}
+      {infoNotices.length > 0 && (
+        <div className="bg-emerald-50/80 border border-emerald-200/60 rounded-2xl p-3.5 shadow-sm flex items-center gap-3">
+          <div className="p-1 bg-emerald-100 text-emerald-700 rounded-lg flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1 flex flex-wrap gap-x-4 gap-y-1">
+            {infoNotices.map((notice, index) => (
+              <span key={index} className="text-xs text-emerald-800 font-medium inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                {notice}
+              </span>
             ))}
-          </ul>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
