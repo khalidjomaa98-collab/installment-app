@@ -6,18 +6,22 @@ import { InstallmentChart } from './components/InstallmentChart';
 import { ScheduleTable } from './components/ScheduleTable';
 import { WarningMessages } from './components/WarningMessages';
 
-const App: React.FC = () => {
-  const [params, setParams] = useState<LoanParams>({
-    totalAmount: 10000,
-    downPayment: 1000,
-    interestRate: 5, 
-    interestType: 'monthly',
-    durationMonths: 6,
-    addAdminFees: true,
-    adminFeesType: 'percentage',
-    adminFeesValue: 10
-  });
+const initialDefaultParams: LoanParams = {
+  totalAmount: 10000,
+  downPayment: 1000,
+  interestRate: 5, 
+  interestType: 'monthly',
+  durationMonths: 6,
+  addAdminFees: true,
+  adminFeesType: 'percentage',
+  adminFeesValue: 10
+};
 
+const durationPresets = [6, 12, 18, 24, 36];
+const downPaymentPresets = [0, 10, 20, 30, 50];
+
+const App: React.FC = () => {
+  const [params, setParams] = useState<LoanParams>(initialDefaultParams);
   const [result, setResult] = useState<CalculationResult | null>(null);
   
   // Tab State for Results Section
@@ -31,6 +35,15 @@ const App: React.FC = () => {
 
   const updateParam = (key: keyof LoanParams, value: any) => {
     setParams(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleReset = () => {
+    setParams(initialDefaultParams);
+  };
+
+  const handleQuickDownPayment = (percentage: number) => {
+    const calculated = Math.round(params.totalAmount * (percentage / 100));
+    updateParam('downPayment', calculated);
   };
 
   const handlePrint = () => {
@@ -173,7 +186,7 @@ const App: React.FC = () => {
                 {/* Tab Content */}
                 <div className="p-4 sm:p-6 lg:p-8 flex-1 bg-slate-50/40">
                   <div className={activeTab === 'summary' ? 'block' : 'hidden print:block'}>
-                    <ResultsSummary result={result} />
+                    <ResultsSummary result={result} params={params} />
                   </div>
                   
                   <div className={activeTab === 'schedule' ? 'block' : 'hidden print:block'}>
@@ -197,9 +210,18 @@ const App: React.FC = () => {
                   <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full"></span>
                   <h2 className="text-lg font-black text-slate-800">بيانات العملية</h2>
                 </div>
-                <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                  حساب تلقائي
-                </span>
+                
+                {/* Reset Button */}
+                <button
+                  onClick={handleReset}
+                  className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 px-2.5 py-1 rounded-lg transition-colors inline-flex items-center gap-1"
+                  title="إعادة تعيين البيانات للوضع الافتراضي"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>عملية جديدة</span>
+                </button>
               </div>
 
               <div className="space-y-4">
@@ -236,6 +258,38 @@ const App: React.FC = () => {
                       />
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-medium">ج.م</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Quick Down Payment Percentages Pills */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold text-slate-400">نسب مقدم سريعة:</span>
+                    {params.totalAmount > 0 && params.downPayment > 0 && (
+                      <span className="text-[10px] text-emerald-600 font-bold">
+                        ({Math.round((params.downPayment / params.totalAmount) * 100)}% من السلعة)
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {downPaymentPresets.map((pct) => {
+                      const calculatedVal = Math.round(params.totalAmount * (pct / 100));
+                      const isSelected = params.downPayment === calculatedVal;
+                      return (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => handleQuickDownPayment(pct)}
+                          className={`py-1 text-[11px] font-bold rounded-lg transition-all border ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          {pct === 0 ? 'بدون' : `${pct}%`}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -344,7 +398,7 @@ const App: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">المدة (بالأشهر)</label>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">المدة (أشهر)</label>
                     <div className="relative flex items-center">
                       <button 
                         onClick={() => updateParam('durationMonths', Math.max(1, params.durationMonths - 1))}
@@ -364,6 +418,30 @@ const App: React.FC = () => {
                         title="زيادة شهر"
                       >+</button>
                     </div>
+                  </div>
+                </div>
+
+                {/* Quick Duration Presets Pills */}
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 mb-1.5">مدد تقسيط سريعة:</span>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {durationPresets.map((months) => {
+                      const isSelected = params.durationMonths === months;
+                      return (
+                        <button
+                          key={months}
+                          type="button"
+                          onClick={() => updateParam('durationMonths', months)}
+                          className={`py-1 text-[11px] font-bold rounded-lg transition-all border ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          {months} ش
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

@@ -1,11 +1,15 @@
-import React from 'react';
-import { CalculationResult } from '../types';
+import React, { useState } from 'react';
+import { CalculationResult, LoanParams } from '../types';
+import { numberToArabicWords } from '../services/tafqeet';
 
 interface ResultsSummaryProps {
   result: CalculationResult;
+  params: LoanParams;
 }
 
-export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result }) => {
+export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result, params }) => {
+  const [copied, setCopied] = useState(false);
+
   const principalPercent = result.totalPayment > 0 
     ? Math.round((result.originalPrincipal / result.totalPayment) * 100) 
     : 0;
@@ -16,18 +20,76 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result }) => {
     ? Math.max(0, 100 - principalPercent - interestPercent) 
     : 0;
 
+  const quoteText = `📄 *عرض تقسيط - الجندي لخدمات التقسيط*
+────────────────────────
+• إجمالي السلعة: ${params.totalAmount.toLocaleString()} ج.م
+• المقدم: ${params.downPayment.toLocaleString()} ج.م
+• مدة التقسيط: ${params.durationMonths} شهر
+• *القسط الشهري: ${Math.round(result.monthlyPayment).toLocaleString()} ج.م*
+  (${numberToArabicWords(result.monthlyPayment)})
+• إجمالي السداد: ${Math.round(result.totalPayment).toLocaleString()} ج.م
+────────────────────────`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(quoteText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(quoteText)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="space-y-6 mb-4 animate-fadeIn">
       
-      {/* Header Info with Badge */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      {/* Header Info with Quick Share Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <h3 className="font-bold text-slate-800 text-base">ملخص العملية الحسابية</h3>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
-          حساب معتمد
-        </span>
+        
+        {/* Quick Share Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopy}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
+              copied 
+                ? 'bg-emerald-600 text-white shadow-emerald-500/20' 
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+            }`}
+            title="نسخ ملخص العرض كنص"
+          >
+            {copied ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>تم النسخ!</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>نسخ العرض</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleWhatsApp}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#25D366] hover:bg-[#20ba59] text-white transition-all shadow-sm shadow-[#25D366]/20"
+            title="إرسال العرض في رسالة واتساب"
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.058-2.036-.495-1.584-.654-2.59-2.28-2.668-2.385-.078-.104-.639-.851-.639-1.624 0-.773.404-1.154.548-1.312.144-.158.314-.198.42-.198.105 0 .211.001.303.006.098.005.228-.037.357.273.132.317.452 1.107.492 1.187.04.08.067.174.014.28-.053.107-.08.174-.16.267-.08.093-.169.208-.241.28-.08.08-.163.167-.07.327.094.16.417.689.896 1.115.617.549 1.137.719 1.298.8.16.08.254.067.348-.04.093-.107.401-.467.508-.627.107-.16.214-.134.359-.08.146.054.924.436 1.083.516.16.08.267.12.306.187.04.066.04.385-.104.79z" />
+            </svg>
+            <span>واتساب</span>
+          </button>
+        </div>
       </div>
 
       {/* Hero Card: Luxury Dark Emerald Gradient */}
@@ -51,8 +113,10 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result }) => {
               </span>
               <span className="text-lg sm:text-xl font-bold text-emerald-400">ج.م / شهر</span>
             </div>
-            <p className="text-slate-400 text-xs mt-1.5 font-medium">
-              مبلغ ثابت يُسدد شهرياً طوال مدة العقد
+
+            {/* Arabic Tafqeet Words */}
+            <p className="text-emerald-300/90 text-xs mt-2 font-medium bg-white/5 py-1 px-3 rounded-lg inline-block border border-white/10">
+              {numberToArabicWords(result.monthlyPayment)}
             </p>
           </div>
           
