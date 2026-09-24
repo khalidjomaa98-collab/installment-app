@@ -17,7 +17,7 @@ const initialDefaultParams: LoanParams = {
   adminFeesValue: 10
 };
 
-const durationPresets = [6, 12, 18, 24, 36];
+const durationPresets = [6, 8, 10, 12];
 const downPaymentPresets = [0, 10, 20, 30, 50];
 
 const App: React.FC = () => {
@@ -424,7 +424,7 @@ const App: React.FC = () => {
                 {/* Quick Duration Presets Pills */}
                 <div>
                   <span className="block text-[10px] font-bold text-slate-400 mb-1.5">مدد تقسيط سريعة:</span>
-                  <div className="grid grid-cols-5 gap-1.5">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {durationPresets.map((months) => {
                       const isSelected = params.durationMonths === months;
                       return (
