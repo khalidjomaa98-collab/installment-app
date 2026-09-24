@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { CalculationResult, LoanParams } from '../types';
 import { numberToArabicWords } from '../services/tafqeet';
+import { formatEgyptianPhone } from '../services/phoneUtils';
 
 interface ResultsSummaryProps {
   result: CalculationResult;
   params: LoanParams;
+  customerPhone?: string;
 }
 
-export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result, params }) => {
+export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result, params, customerPhone }) => {
   const [copied, setCopied] = useState(false);
 
   const principalPercent = result.totalPayment > 0 
@@ -37,7 +39,9 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = ({ result, params }
   };
 
   const handleWhatsApp = () => {
-    const url = `https://wa.me/?text=${encodeURIComponent(quoteText)}`;
+    const formatted = formatEgyptianPhone(customerPhone || '');
+    const baseUrl = formatted ? `https://wa.me/${formatted}` : 'https://wa.me/';
+    const url = `${baseUrl}?text=${encodeURIComponent(quoteText)}`;
     window.open(url, '_blank');
   };
 

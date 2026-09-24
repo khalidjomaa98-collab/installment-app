@@ -105,7 +105,56 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule: initialS
 
       {/* Table Container */}
       <div className="overflow-auto custom-scrollbar flex-1 max-h-[520px]">
-        <table className="min-w-full divide-y divide-slate-100 text-right">
+        {/* Mobile View: Clean Touch-Friendly Vertical Cards */}
+        <div className="sm:hidden p-3 space-y-2.5">
+          {localSchedule.map((item, idx) => {
+            const remainingRatio = totalExpected > 0 ? (item.balance / totalExpected) * 100 : 0;
+            return (
+              <div key={item.month} className="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex justify-between items-center mb-2.5">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100">
+                    شهر {item.month}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-slate-500 font-medium">القسط:</span>
+                    <input 
+                      type="number"
+                      inputMode="numeric"
+                      value={Math.round(item.payment * 100) / 100}
+                      onChange={(e) => handlePaymentChange(idx, e.target.value)}
+                      className="w-24 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-lg px-2 py-1 text-xs font-bold text-slate-800 text-center dir-ltr outline-none"
+                    />
+                    <span className="text-xs text-slate-400">ج.م</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center text-xs text-slate-500 mb-2 px-1">
+                  <span>الأصل: <strong className="text-slate-700">{Math.round(item.principal).toLocaleString()}</strong> ج.م</span>
+                  <span className="text-rose-500">الفائدة: <strong className="text-rose-600">+{Math.round(item.interest).toLocaleString()}</strong> ج.م</span>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+                  <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${item.balance === 0 ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                      style={{ width: `${Math.min(100, Math.max(0, remainingRatio))}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 min-w-[85px] text-left">
+                    المتبقي: {Math.round(item.balance).toLocaleString()} ج.م
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="p-3 bg-slate-50 rounded-xl text-center text-xs font-bold text-slate-700 border border-slate-200">
+            إجمالي السداد: <strong className="text-emerald-700 text-sm">{Math.round(totalPayments).toLocaleString()} ج.م</strong>
+          </div>
+        </div>
+
+        {/* Desktop View: Full Table */}
+        <table className="min-w-full divide-y divide-slate-100 text-right hidden sm:table">
           <thead className="bg-slate-50/95 backdrop-blur-sm sticky top-0 z-10 border-b border-slate-200/80">
             <tr>
               <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
@@ -115,10 +164,10 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule: initialS
                 قيمة القسط
                 <span className="text-[10px] font-normal text-slate-400 mr-1">(قابل للتعديل)</span>
               </th>
-              <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider hidden sm:table-cell">
+              <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                 أصل القسط
               </th>
-              <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider hidden sm:table-cell">
+              <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                 فائدة القسط
               </th>
               <th scope="col" className="px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
@@ -144,6 +193,7 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule: initialS
                     <div className="relative inline-flex items-center group/input">
                       <input 
                         type="number" 
+                        inputMode="numeric"
                         value={Math.round(item.payment * 100) / 100} 
                         onChange={(e) => handlePaymentChange(idx, e.target.value)}
                         className="w-28 bg-slate-50/60 group-hover/input:bg-white border border-slate-200 group-hover/input:border-emerald-400 focus:border-emerald-500 focus:bg-white rounded-lg px-2.5 py-1 font-bold text-slate-800 text-sm outline-none transition-all dir-ltr"
@@ -153,12 +203,12 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule: initialS
                   </td>
 
                   {/* Principal */}
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium hidden sm:table-cell">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">
                     {item.principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
 
                   {/* Interest */}
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-rose-500 font-medium hidden sm:table-cell">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-rose-500 font-medium">
                     {item.interest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
 
@@ -191,10 +241,10 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule: initialS
               <td className="px-4 py-3 text-emerald-700 text-sm font-black">
                 {Math.round(totalPayments).toLocaleString()} ج.م
               </td>
-              <td className="px-4 py-3 hidden sm:table-cell text-slate-600">
+              <td className="px-4 py-3 text-slate-600">
                 {Math.round(totalPrincipal).toLocaleString()} ج.م
               </td>
-              <td className="px-4 py-3 hidden sm:table-cell text-rose-600">
+              <td className="px-4 py-3 text-rose-600">
                 {Math.round(totalInterest).toLocaleString()} ج.م
               </td>
               <td className="px-4 py-3 text-emerald-600">
